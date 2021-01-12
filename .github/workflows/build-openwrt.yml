@@ -5,10 +5,7 @@
 # Copyright (C) 2019 P3TERX <https://p3terx.com>
 # <https://github.com/P3TERX/Actions-OpenWrt.git>
 #
-
-
 name: 编译OpenWrt固件
-
 on:
   workflow_dispatch:
     inputs:
@@ -25,16 +22,9 @@ on:
         required: false
         default: 'release-actions'
 
-
-#定时触发开始编译(开启定时编译请先确认SSH处在关闭状态,要不然SSH没人管,会卡SSH编译失败)
+#定时触发开始编译(把下面两个#去掉开启,时间设置请看定时编译说明)
 #  schedule:
 #    - cron: 0 8 */5 * *
-
-
-#点☆Star触发开始编译
-#  watch:
-#    types: started
-
 
 env: 
   REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
@@ -53,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [Lede_x86_64]
+        target: [Project_nanopi_r4s]
 
      # [Lede_nanopi_r2s,Lede_newifi_d2,Lede_phicomm_k2p,Lede_phicomm_n1,Lede_redmi_ac2100,Lede_wndr3800,Lede_wr703n_v1,Lede_x86_64,Lede_xiaomi_r3pro,Lede_xiaoyu_c5]
      # [Lienol_phicomm_k2p,Lienol_phicomm_k3,Lienol_x86_64]
@@ -118,7 +108,6 @@ jobs:
           rm -rf package/lean/{luci-app-netdata,luci-theme-argon,k3screenctrl}
         fi
         
-
     - name: 加载源,patch补丁和自定义设置
       run: |
         if [ ${{matrix.target}} = Lede_phicomm_n1 -o ${{matrix.target}} = Project_phicomm_n1 ];then
@@ -159,7 +148,7 @@ jobs:
         make && sudo make install
         popd
  
-    - name: SSH远程连接（若打开SSH,运行到此必须刷新一次网页耐心等待代码展开,不能频繁刷新）
+    - name: SSH远程连接（若打开了此功能,在此转圈2分钟还展开不了,请看《SSH连接教程》）
       uses: 281677160/debugger-action@master
       if: env.SSH_ACTIONS == 'true' || (github.event.inputs.ssh == 'ssh' && github.event.inputs.ssh  != 'false')
       env:
@@ -192,13 +181,14 @@ jobs:
         name: OpenWrt_bin_${{matrix.target}}_${{ env.date }}
         path: openwrt/bin
 
-    - name: 编译N1机型时,打包n1、vplus、beikeyun、l1pro、s905x3固件
+    - name: 编译N1机型时,打包（N1、微加云、贝壳云、我家云、S9xxx）固件
       run: |
         if [ ${{matrix.target}} = Lede_phicomm_n1 -o ${{matrix.target}} = Project_phicomm_n1 ];then
          cp openwrt/bin/targets/armvirt/*/*.tar.gz reform/openwrt
          cd reform
          sudo ./gen_openwrt -d -k latest
-         devices=("phicomm-n1" "vplus" "beikeyun" "l1pro" "s905x3")
+         
+         devices=("phicomm-n1" "rk3328" "s9xxx" "vplus")
          cd out
          for x in ${devices[*]}; do
            cd $x
